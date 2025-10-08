@@ -1,23 +1,22 @@
-import './assets/main.css'
-
-// 引入 mockjs，让它在项目启动时就开始拦截请求
-import './mock'
-
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-
 import App from './App.vue'
 import router from './router'
 
-// 1. 引入 Element Plus
+// 引入 Element Plus
 import ElementPlus from 'element-plus'
-// 2. 引入 Element Plus 的样式文件
 import 'element-plus/dist/index.css'
+
+// 引入 Element Plus 的图标
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 const app = createApp(App)
 
-app.use(createPinia())
+// 全局注册 Element Plus 图标
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
+}
+
 app.use(router)
-app.use(ElementPlus)
+app.use(ElementPlus) // 使用 Element Plus
 
 app.mount('#app')

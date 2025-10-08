@@ -44,8 +44,8 @@ Mock.mock('/sys/userInfo', 'get', () => {
   response.data = {
     id: '1',
     username: 'Tom',
-    // avatar: require('@/assets/user.jpg') // 我们暂时用不到这个，先注释掉
-    avatar: 'https://i.pravatar.cc/150?u=admin', // 使用一个在线随机头像URL代替
+    // avatar: require('@/assets/user.jpg'), // 我们暂时用不到这个，先注释掉
+    avatar: 'https://raw.githubusercontent.com/yycy134679/PicGo/master/user.jpg',
   }
   return response
 })
