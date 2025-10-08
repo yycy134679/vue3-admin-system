@@ -50,11 +50,7 @@
           />
         </el-form-item>
         <el-form-item label="验证码" prop="code">
-          <el-input
-            v-model="loginForm.code"
-            style="width: 260px; float: left"
-            placeholder="请输入验证码"
-          />
+          <el-input v-model="loginForm.code" style="width: 170px; float: left" />
           <el-image :src="codeImg" class="codeImg"></el-image>
         </el-form-item>
         <el-form-item style="float: left; position: relative; left: 10%; margin-top: 30px">
@@ -67,13 +63,15 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
+import request from '@/axios.js'
 
 const loginFromRef = ref()
 const loginForm = reactive({
   username: '',
   password: '',
   code: '',
+  token: '',
 })
 
 const codeImg = ref('') // 验证码图片
@@ -85,6 +83,7 @@ const rules = reactive({
     { required: true, message: '请输入验证码', trigger: 'blur' },
     { min: 5, max: 5, message: '验证码长度应为 5 个字符', trigger: 'blur' },
   ],
+  codeImg: '',
 })
 
 const submitForm = async (formEl) => {
@@ -102,6 +101,25 @@ const resetForm = (formEl) => {
   if (!formEl) return
   formEl.resetFields()
 }
+// 获取验证码
+const getCaptcha = () => {
+  request
+    .get('/captcha')
+    .then((res) => {
+      if (res.data && res.data.data) {
+        loginForm.token = res.data.data.token || ''
+        console.log('mock（模拟服务器生成的随机码）：', loginForm.token)
+        codeImg.value = res.data.data.captchaImg
+      }
+    })
+    .catch((error) => {
+      console.log('获取验证码失败：', error)
+    })
+}
+
+onMounted(() => {
+  getCaptcha()
+})
 </script>
 
 <style scoped>
