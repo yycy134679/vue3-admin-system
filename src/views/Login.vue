@@ -64,7 +64,12 @@
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.js'
 import request from '@/axios.js'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const loginFromRef = ref()
 const loginForm = reactive({
@@ -90,7 +95,22 @@ const submitForm = async (formEl) => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
     if (valid) {
-      console.log('登录成功!', loginForm)
+      // 发送登录请求
+      request
+        .post('/login', loginForm)
+        .then((res) => {
+          console.log('响应headers:', res.headers)
+          const jwt = res.data.headers['authorization'] || res.data.headers['Authorization']
+          console.log('JWT令牌 登录成功时，提交的随机码:', jwt)
+          // 将token存储到store中
+          authStore.setToken(jwt)
+          // 跳转到首页
+          router.push('/')
+          console.log('登录成功!', loginForm)
+        })
+        .catch((error) => {
+          console.log('登录失败:', error)
+        })
     } else {
       console.log('验证失败!', fields)
     }
