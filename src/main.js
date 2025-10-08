@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
@@ -14,6 +15,7 @@ import request from './axios.js'
 import './mock.js'
 
 const app = createApp(App)
+const pinia = createPinia()
 
 // 全局挂载 axios 实例（Vue3 方式）
 app.config.globalProperties.$request = request
@@ -23,6 +25,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
+app.use(pinia) // 使用 Pinia
 app.use(router)
 app.use(ElementPlus) // 使用 Element Plus
 
