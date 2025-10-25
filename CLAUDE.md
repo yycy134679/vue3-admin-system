@@ -50,17 +50,29 @@ npm run format
 
 ```
 src/
-├── assets/          # 静态资源
-├── components/      # 公共组件
-├── mock/           # Mock 数据
-├── router/         # 路由配置
-├── stores/         # Pinia 状态管理
-├── views/          # 页面组件
+├── assets/          # 静态资源（如 user.jpg）
+├── components/      # 公共组件（如 HelloWorld.vue）
+├── stores/         # Pinia 状态管理（auth.js, counter.js）
+├── router/         # 路由配置（index.js）
+├── views/          # 主要页面组件
+│   ├── sys/        # 系统管理功能组件（User.vue, Role.vue, Menu.vue）
+│   ├── Login.vue   # 登录页
+│   ├── Home.vue    # 主布局容器（包含头部、侧边栏、主内容区）
+│   ├── index.vue   # 首页内容
+│   ├── SideMenu.vue # 左侧导航菜单
+│   └── inc.vue     # 其他组件
 ├── App.vue         # 根组件
-├── main.js         # 入口文件
-├── axios.js        # Axios 配置和拦截器
-└── mock.js         # Mock 数据接口
+├── main.js         # 入口文件（全局配置、插件注册）
+├── axios.js        # Axios 实例配置和拦截器
+└── mock.js         # Mock 数据接口定义
 ```
+
+### 关键架构说明
+
+1. **布局层级**: `App.vue` → `Home.vue`（主布局） → `router-view`（动态内容）
+2. **导航结构**: `Home.vue` 包含 `SideMenu.vue`（左侧菜单）+ 顶部栏 + 主内容区
+3. **系统模块**: `views/sys/` 目录存放系统管理功能组件（用户、角色、菜单管理）
+4. **路由配置**: Home 为父路由，index 和系统管理页面为子路由
 
 ## 核心功能模块
 
@@ -87,16 +99,16 @@ src/
 
 ### 4. 路由系统 (`src/router/index.js`)
 
-- 基本的页面路由配置
-- 支持懒加载
-- 当前配置了 Home、Login 和 index 页面
+- 采用嵌套路由结构：Home 为父路由，包含多个子路由
+- 子路由：`/index`（首页）、`/sys/users`、`/sys/roles`、`/sys/menus`
+- 独立路由：`/login`（登录页，使用懒加载）
+- 所有系统管理页面在 Home 布局内通过 `<router-view>` 动态渲染
 
-### 5. 主界面系统 (`src/views/index.vue`)
+### 5. 主界面系统 (`src/views/Home.vue` + `SideMenu.vue`)
 
-- 左侧导航栏，包含系统管理、系统工具等功能模块
-- 顶部头部区域，显示系统标题和用户信息
-- 主要内容区域（Main）
-- 使用 Element Plus 图标组件
+- **Home.vue**: 使用 Element Plus 的 Container 布局，包含侧边栏、头部和主内容区
+- **SideMenu.vue**: 左侧导航菜单，包含首页、系统管理（用户/角色/菜单管理）、系统工具（数字字典）
+- 使用 `<router-link>` 实现页面导航，避免全页面刷新
 
 ## 开发规范
 
@@ -113,9 +125,16 @@ src/
 
 ### 3. 数据请求
 
-- 使用全局挂载的 `$request` 实例进行 HTTP 请求
-- Mock 数据位于 `/src/mock.js`
-- 接口路径以 `/sys` 开头的为系统管理相关接口
+- 在组件中通过 `this.$request` 或 `getCurrentInstance().appContext.config.globalProperties.$request` 访问 Axios 实例
+- 在 Composition API 中使用：
+  ```javascript
+  import { getCurrentInstance } from 'vue'
+  const { proxy } = getCurrentInstance()
+  proxy.$request.get('/api/endpoint')
+  ```
+- 或直接导入：`import request from '@/axios.js'`
+- Mock 数据位于 `src/mock.js`，开发时自动拦截请求
+- 接口路径约定：系统管理相关接口以 `/sys` 开头
 
 ### 4. 路径别名
 
@@ -154,12 +173,28 @@ src/
 
 ## 开发注意事项
 
-1. **组件注册**: Element Plus 图标已在 `main.js` 中全局注册
-2. **HTTP 请求**: 使用全局挂载的 `$request` 而不是直接导入 axios
-3. **Mock 数据**: 开发阶段使用 Mock 数据，实际部署时需要替换为真实接口
-4. **路由懒加载**: 非首页组件建议使用懒加载
-5. **响应式设计**: 使用 Element Plus 的栅格系统进行响应式布局
-6. **错误处理**: 响应拦截器会自动处理错误消息提示和 401 重定向
+1. **全局配置位置**: `main.js` 中完成了以下全局配置：
+   - Element Plus 图标全局注册（可直接在模板中使用）
+   - `$request` 全局属性挂载（用于 HTTP 请求）
+   - Pinia、Router、Element Plus 插件注册
+
+2. **HTTP 请求流程**:
+   - 请求拦截器自动从 localStorage 读取 token 并添加到 Authorization 头
+   - 响应拦截器统一处理错误（code !== 200 时显示错误消息）
+   - 401 状态码自动跳转到登录页
+
+3. **Mock 数据开发**:
+   - Mock.js 在 `main.js` 中导入后即生效
+   - 实际请求会被 Mock.js 拦截，返回模拟数据
+   - 生产环境需要删除 `import './mock.js'` 并连接真实后端
+
+4. **组件导入注意**:
+   - 系统管理组件位于 `@/views/sys/` 目录
+   - 使用路径别名 `@` 指向 `src` 目录
+
+5. **路由导航**:
+   - 在 SideMenu 中添加新菜单项时，需要同步更新 `router/index.js` 中的路由配置
+   - 子路由路径不需要以 `/` 开头（相对于父路由）
 
 ## 登录流程
 
@@ -168,17 +203,36 @@ src/
 3. 前端提交用户名、密码、验证码还有随机码
 4. 后台验证验证码是否匹配以及密码是否正确
 
-## 项目状态
+## 项目当前状态
 
-### 当前进度
-- ✅ 基础项目结构搭建
-- ✅ Vue 3 + Element Plus 环境配置
-- ✅ Axios 请求拦截器和响应拦截器
-- ✅ Mock 数据系统
-- ✅ 登录页面和功能
-- ✅ 主页面布局和导航结构
+### 已完成功能
+- ✅ 基础项目结构和环境配置
+- ✅ 登录页面（含验证码功能）
+- ✅ Axios 请求/响应拦截器
+- ✅ Mock 数据系统（登录、用户、角色、菜单接口）
+- ✅ 主布局框架（Home.vue 包含头部、侧边栏、主内容区）
+- ✅ 左侧导航菜单（SideMenu.vue）
+- ✅ 嵌套路由配置
 
-### 最近更新
-- 第四周：第三、四小节完成，进度至 index 页面整体布局，左侧导航栏
-- 第四周：第二小节完成：axios 请求前后置拦截处理
-- 第四周：第一小节完成：登录页面发起请求
+### 待开发功能
+- 系统管理页面内容实现（User.vue、Role.vue、Menu.vue 当前为空）
+- 首页（index.vue）内容填充
+- 用户信息获取和显示（头部下拉菜单）
+- 退出登录功能
+- 路由守卫（登录验证）
+- 动态菜单加载（基于权限）
+
+### Git 状态
+当前分支: `main`
+
+已修改但未提交的文件:
+- `src/router/index.js` - 路由配置更新
+- `src/views/Home.vue` - 主布局完善
+- `src/views/index.vue` - 首页组件
+
+新增文件:
+- `src/views/sys/Menu.vue` - 菜单管理页面
+- `src/views/sys/Role.vue` - 角色管理页面
+- `src/views/sys/User.vue` - 用户管理页面
+- `src/views/SideMenu.vue` - 侧边栏导航
+- `src/views/inc.vue` - 组件文件
