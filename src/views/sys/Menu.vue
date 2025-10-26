@@ -48,11 +48,16 @@
 
       <el-table-column prop="Operate" label="操作">
         <template #default="{ row }">
-          <el-button type="primary" link>编辑</el-button>
+          <el-button type="primary" link @click="editHandle(row.id)">编辑</el-button>
           <el-divider direction="vertical" />
-          <el-popconfirm title="确定删除吗？" confirm-button-text="确认" cancel-button-text="取消">
+          <el-popconfirm
+            title="确定删除吗？"
+            confirm-button-text="确认"
+            cancel-button-text="取消"
+            @confirm="delHandle(row.id)"
+          >
             <template #reference>
-              <el-button type="text" slot="reference">删除</el-button>
+              <el-button type="text">删除</el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -161,24 +166,81 @@ const editFormRules = ref({
 const submitForm = () => {
   editFormRef.value.validate((valid) => {
     if (valid) {
-      console.log('提交表单', editForm.value)
-      // TODO: 这里添加提交逻辑
-      dialogVisible.value = false
+      proxy.$request
+        .post('/sys/menu/' + (editForm.value.id ? 'update' : 'save'), editForm.value)
+        .then((res) => {
+          proxy.$message({
+            showClose: true,
+            message: '恭喜，操作成功',
+            type: 'success',
+            onClose: () => {
+              getMenuTree()
+            },
+          })
+          resetForm()
+          dialogVisible.value = false
+        })
+        .catch((error) => {
+          console.error('操作失败:', error)
+        })
     } else {
-      console.log('表单验证失败')
+      console.log('error submit!!')
       return false
     }
   })
 }
 
+// 编辑菜单
+const editHandle = (id) => {
+  proxy.$request
+    .get('/sys/menu/info/' + id)
+    .then((res) => {
+      editForm.value = res.data.data
+      dialogVisible.value = true
+    })
+    .catch((err) => {
+      console.error('获取菜单信息失败:', err)
+    })
+}
+
+// 删除菜单
+const delHandle = (id) => {
+  proxy.$request
+    .post('/sys/menu/delete/' + id)
+    .then((res) => {
+      proxy.$message({
+        showClose: true,
+        message: '删除成功',
+        type: 'success',
+        onClose: () => {
+          getMenuTree()
+        },
+      })
+    })
+    .catch((err) => {
+      console.error('删除失败:', err)
+    })
+}
+
 // 重置表单
 const resetForm = () => {
   editFormRef.value.resetFields()
+  dialogVisible.value = false
+  editForm.value = {
+    parentId: '',
+    name: '',
+    perms: '',
+    icon: '',
+    path: '',
+    component: '',
+    type: 0,
+    statu: 1,
+    orderNum: 1,
+  }
 }
 
-const handleClose = (done) => {
-  // 关闭前的回调
-  done()
+const handleClose = () => {
+  resetForm()
 }
 
 // 菜单列表数据
