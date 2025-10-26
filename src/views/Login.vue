@@ -104,8 +104,8 @@ const submitForm = async (formEl) => {
           console.log('JWT令牌 登录成功时，提交的随机码:', jwt)
           // 将token存储到store中
           authStore.setToken(jwt)
-          // 跳转到首页
-          router.push('/')
+          // 跳转到首页（直接到 /index，避免出现“Home”标签）
+          router.push('/index')
           console.log('登录成功!', loginForm)
         })
         .catch((error) => {

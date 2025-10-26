@@ -20,6 +20,8 @@ const router = createRouter({
       path: '/',
       name: 'Home',
       component: Home,
+      // 登录后或访问根路径时，始终重定向到首页，避免出现“Home”标签
+      redirect: '/index',
       children: [
         {
           path: '/index',
@@ -114,6 +116,10 @@ router.beforeEach(async (to, from, next) => {
 
   const token = authStore.token || localStorage.getItem('token') || ''
   if (!token) {
+    // 没有登录，确保清空菜单/标签等残留状态
+    try {
+      menuStore.resetState()
+    } catch (e) {}
     return next({ path: '/login', replace: true })
   }
 
@@ -138,6 +144,10 @@ router.beforeEach(async (to, from, next) => {
       return next({ ...to, replace: true })
     } catch (err) {
       console.error('获取导航失败:', err)
+      // 失败时，清空残留状态并返回登录
+      try {
+        menuStore.resetState()
+      } catch (e) {}
       return next({ path: '/login', replace: true })
     }
   }

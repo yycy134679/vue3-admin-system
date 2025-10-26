@@ -19,7 +19,7 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item>
-                  <router-link to="/UserCenter">个人中心</router-link>
+                  <router-link to="/userCenter">个人中心</router-link>
                 </el-dropdown-item>
                 <el-dropdown-item @click.native="logout">退出</el-dropdown-item>
               </el-dropdown-menu>
@@ -28,6 +28,7 @@
         </div>
       </el-header>
       <el-main>
+        <Tabs />
         <router-view></router-view>
       </el-main>
     </el-container>
@@ -39,12 +40,15 @@ import { reactive, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown } from '@element-plus/icons-vue'
 import SideMenu from './inc/SideMenu.vue'
+import Tabs from './inc/Tabs.vue'
 import { useAuthStore } from '@/stores'
+import { useMenuStore } from '@/stores/modules/menu'
 
 // 获取全局属性
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const authStore = useAuthStore()
+const menuStore = useMenuStore()
 
 // 定义响应式用户信息对象
 const userInfo = reactive({
@@ -54,29 +58,43 @@ const userInfo = reactive({
 })
 
 // 获取用户信息的方法
-const getUserInfo = () => {
-  proxy.$request.get('/sys/userInfo').then((res) => {
+const getUserInfo = async () => {
+  try {
+    const res = await proxy.$request.get('/sys/userInfo')
     if (res.data && res.data.data) {
       userInfo.id = res.data.data.id
       userInfo.username = res.data.data.username
       userInfo.avatar = res.data.data.avatar
     }
-  })
+  } catch (e) {
+    // 异常捕获：如 token 失效等，回到登录页
+    try {
+      authStore.clearToken()
+      menuStore.resetState()
+    } catch (err) {}
+    router.push('/login')
+  }
 }
 
 // 退出登录方法
-const logout = () => {
-  proxy.$request.post('/logout').then((res) => {
-    // 清除 localStorage 和 sessionStorage
-    localStorage.clear()
+const logout = async () => {
+  try {
+    await proxy.$request.post('/logout')
+  } catch (e) {
+    // 忽略服务端异常，执行本地清理
+  }
+
+  // 清除 token 与菜单/标签状态
+  authStore.clearToken()
+  menuStore.resetState()
+
+  // 可选：清理其它本地状态
+  try {
     sessionStorage.clear()
+  } catch (e) {}
 
-    // 重置 Pinia store 状态
-    authStore.resetState()
-
-    // 跳转到登录页
-    router.push('/login')
-  })
+  // 跳转到登录页
+  router.push('/login')
 }
 
 // 组件挂载时获取用户信息
@@ -117,7 +135,6 @@ onMounted(() => {
 .el-main {
   color: #333;
   text-align: center;
-  line-height: 160px;
   padding: 0;
 }
 </style>

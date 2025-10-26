@@ -5,6 +5,14 @@ export const useMenuStore = defineStore('menu', {
     menuList: [],
     permList: [],
     hasRoute: false,
+
+    editableTabsValue: 'Index',
+    editableTabs: [
+      {
+        title: '首页',
+        name: 'Index',
+      },
+    ],
   }),
 
   actions: {
@@ -19,6 +27,38 @@ export const useMenuStore = defineStore('menu', {
     changeRouteState(hasRoute) {
       this.hasRoute = hasRoute
       sessionStorage.setItem('hasRoute', hasRoute)
+    },
+
+    addTab(item) {
+      // 检查标签页是否已存在
+      const exists = this.editableTabs.find((tab) => tab.name === item.name)
+      if (!exists) {
+        this.editableTabs.push({
+          title: item.title,
+          name: item.name,
+        })
+      }
+      // 设置当前激活的标签页
+      this.editableTabsValue = item.name
+    },
+
+    // 重置菜单与标签状态（用于退出登录或需要清空时）
+    resetState() {
+      this.menuList = []
+      this.permList = []
+      this.hasRoute = false
+      try {
+        sessionStorage.removeItem('hasRoute')
+      } catch (e) {}
+
+      // 恢复默认标签：仅保留首页
+      this.editableTabsValue = 'Index'
+      this.editableTabs = [
+        {
+          title: '首页',
+          name: 'Index',
+        },
+      ]
     },
   },
 
