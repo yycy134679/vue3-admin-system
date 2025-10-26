@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { useMenuStore } from '@/stores/modules/menu'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -18,5 +19,10 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = ''
   }
 
-  return { token, setToken, clearToken, resetState }
+  // 在需要使用 menu store 的地方调用
+  function getMenuStore() {
+    return useMenuStore()
+  }
+
+  return { token, setToken, clearToken, resetState, getMenuStore }
 })

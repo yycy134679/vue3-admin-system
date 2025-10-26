@@ -1,6 +1,9 @@
 <template>
   <el-container>
-    <SideMenu />
+    <el-aside width="200px">
+      <SideMenu />
+    </el-aside>
+
     <el-container>
       <!-- 头部 -->
       <el-header>
@@ -35,7 +38,7 @@
 import { reactive, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown } from '@element-plus/icons-vue'
-import SideMenu from './SideMenu.vue'
+import SideMenu from './inc/SideMenu.vue'
 import { useAuthStore } from '@/stores'
 
 // 获取全局属性
