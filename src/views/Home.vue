@@ -29,7 +29,9 @@
       </el-header>
       <el-main>
         <Tabs />
-        <router-view></router-view>
+        <div style="margin: 0 15px">
+          <router-view></router-view>
+        </div>
       </el-main>
     </el-container>
   </el-container>
@@ -134,7 +136,7 @@ onMounted(() => {
 
 .el-main {
   color: #333;
-  text-align: center;
+  text-align: left;
   padding: 0;
 }
 </style>
