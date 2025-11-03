@@ -55,6 +55,8 @@ Mock.mock('/logout', 'post', () => {
   return response
 })
 
+let authoritys = ['sys:user:list']
+
 Mock.mock('/sys/menu/nav', 'get', () => {
   const response = createResponse()
   let nav = [
@@ -109,7 +111,6 @@ Mock.mock('/sys/menu/nav', 'get', () => {
       ],
     },
   ]
-  let authoritys = []
   response.data = {
     nav: nav,
     authoritys: authoritys,

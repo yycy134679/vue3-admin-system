@@ -10,13 +10,17 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" @click="dialogVisible = true">新增</el-button>
+        <el-button type="primary" @click="dialogVisible = true" v-if="hasAuth('sys:user:save')"
+          >新增</el-button
+        >
       </el-form-item>
 
       <el-form-item>
         <el-popconfirm title="这是确定批量删除吗？" @confirm="delHandle(null)">
           <template #reference>
-            <el-button type="danger" :disabled="delBtlStatu">批量删除</el-button>
+            <el-button type="danger" :disabled="delBtlStatu" v-if="hasAuth('sys:user:delete')"
+              >批量删除</el-button
+            >
           </template>
         </el-popconfirm>
       </el-form-item>
@@ -163,8 +167,12 @@
 <script setup>
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useAuth } from '@/composables/useAuth'
 
 const { proxy } = getCurrentInstance()
+
+// 权限校验
+const { hasAuth } = useAuth()
 
 // 搜索表单
 const searchForm = reactive({
