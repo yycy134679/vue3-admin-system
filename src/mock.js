@@ -423,6 +423,24 @@ Mock.mock(RegExp('^/sys/role/delete/\\d+$'), 'post', (req) => {
   return response
 })
 
+// 分配权限
+Mock.mock(RegExp('^/sys/role/perm/\\d+$'), 'post', (req) => {
+  const response = createResponse()
+  const idStr = req.url.split('/').pop()
+  const id = Number(idStr)
+  const menuIds = JSON.parse(req.body || '[]')
+  const idx = rolesData.findIndex((r) => r.id === id)
+  if (idx !== -1) {
+    rolesData[idx].menuIds = menuIds
+    rolesData[idx].updated = new Date().toISOString()
+    response.data = rolesData[idx]
+  } else {
+    response.code = 400
+    response.msg = '角色不存在'
+  }
+  return response
+})
+
 ////用户管理
 
 Mock.mock(RegExp('/sys/user/list*'), 'get', () => {

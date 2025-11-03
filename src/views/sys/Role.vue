@@ -52,7 +52,7 @@
 
       <el-table-column prop="operate" label="操作">
         <template #default="scope">
-          <el-button type="text" @click="editHandle(scope.row.id)">分配权限</el-button>
+          <el-button type="text" @click="permHandle(scope.row.id)">分配权限</el-button>
           <el-divider direction="vertical"></el-divider>
 
           <el-button type="text" @click="editHandle(scope.row.id)">编辑</el-button>
@@ -106,11 +106,32 @@
         </span>
       </template>
     </el-dialog>
+
+    <el-dialog title="分配权限" v-model="permDialogVisible" width="600px">
+      <el-form :model="permForm">
+        <el-tree
+          :data="permTreedata"
+          show-checkbox
+          ref="permTree"
+          :default-expand-all="true"
+          node-key="id"
+          :props="defaultProps"
+        >
+        </el-tree>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="permDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitPermFormHandle">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, getCurrentInstance, onMounted } from 'vue'
+import { ref, getCurrentInstance, onMounted, nextTick } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
@@ -141,6 +162,14 @@ const editFormRules = {
 }
 
 const tableData = ref([])
+
+const permDialogVisible = ref(false)
+const permForm = ref({})
+const defaultProps = {
+  children: 'children',
+  label: 'name',
+}
+const permTreedata = ref([])
 
 // 获取角色列表
 const getRoleList = () => {
@@ -272,7 +301,44 @@ const handleClose = () => {
 // 组件挂载时获取数据
 onMounted(() => {
   getRoleList()
+  proxy.$request.get('/sys/menu/list').then((res) => {
+    permTreedata.value = res.data.data
+  })
 })
+// 分配权限处理
+const permTree = ref(null)
+const permHandle = (id) => {
+  permDialogVisible.value = true
+  nextTick(() => {
+    proxy.$request.get('/sys/role/info/' + id).then((res) => {
+      // 设置树选中项
+      permTree.value.setCheckedKeys(res.data.data.menuIds)
+      permForm.value = res.data.data
+    })
+  })
+}
+
+// 分配权限提交
+const submitPermFormHandle = () => {
+  const menuIds = permTree.value.getCheckedKeys()
+  console.log('提交时的勾选菜单id:', menuIds)
+  proxy.$request
+    .post('/sys/role/perm/' + permForm.value.id, menuIds)
+    .then((res) => {
+      proxy.$message({
+        showClose: true,
+        message: '恭喜，操作成功',
+        type: 'success',
+        onClose: () => {
+          getRoleList()
+        },
+      })
+      permDialogVisible.value = false
+    })
+    .catch((err) => {
+      console.error('分配权限失败:', err)
+    })
+}
 </script>
 
 <style scoped>
