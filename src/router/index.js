@@ -69,10 +69,12 @@ function menuToRoute(menu) {
   const loader = viewModules[fileKey]
   if (!loader) return null
 
-  const normalizedPath = menu.path.startsWith('/') ? menu.path.slice(1) : menu.path
   return {
-    path: normalizedPath,
-    name: menu.name || normalizedPath,
+    // 注意：作为 Home 的子路由添加时，child 路由 path 不能以 '/' 开头
+    // 后端通常返回绝对路径（如 '/sys/roles'），这里转换为相对路径 'sys/roles'
+    // 这样挂到父路由 '/' 下后，完整路径依然是 '/sys/roles'
+    path: menu.path.startsWith('/') ? menu.path.slice(1) : menu.path,
+    name: menu.name || menu.path,
     meta: {
       icon: menu.icon,
       title: menu.title,
@@ -129,7 +131,6 @@ router.beforeEach(async (to, from, next) => {
       const res = await axios.get('/sys/menu/nav')
       const { nav, authoritys } = res.data.data || { nav: [], authoritys: [] }
 
-      console.log('路由守卫-获取到的导航数据:', nav)
       menuStore.setMenuList(nav)
       menuStore.setPermList(authoritys)
 

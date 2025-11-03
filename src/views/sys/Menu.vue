@@ -177,7 +177,6 @@ const submitForm = () => {
               getMenuTree()
             },
           })
-          resetForm()
           dialogVisible.value = false
         })
         .catch((error) => {
@@ -225,7 +224,6 @@ const delHandle = (id) => {
 // 重置表单
 const resetForm = () => {
   editFormRef.value.resetFields()
-  dialogVisible.value = false
   editForm.value = {
     parentId: '',
     name: '',
@@ -240,6 +238,7 @@ const resetForm = () => {
 }
 
 const handleClose = () => {
+  dialogVisible.value = false
   resetForm()
 }
 

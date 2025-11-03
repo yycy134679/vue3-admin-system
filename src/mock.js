@@ -309,32 +309,39 @@ Mock.mock(RegExp('/sys/menu/*'), 'post', () => {
 
 //////////////// 角色管理 ////////////////
 
-Mock.mock(RegExp('/sys/role/list*'), 'get', () => {
+// 使用内存数组持久化模拟数据
+let rolesData = [
+  {
+    id: 3,
+    created: '2021-01-04T10:09:14',
+    updated: '2021-01-30T08:19:52',
+    statu: 1,
+    name: '普通用户',
+    code: 'normal',
+    remark: '只有基本查看功能',
+    menuIds: [],
+  },
+  {
+    id: 6,
+    created: '2021-01-16T13:29:03',
+    updated: '2021-01-17T15:50:45',
+    statu: 1,
+    name: '超级管理员',
+    code: 'admin',
+    remark: '系统默认最高权限，不可以编辑和任意修改',
+    menuIds: [],
+  },
+]
+
+let nextRoleId = Math.max(...rolesData.map((r) => r.id)) + 1
+
+// 列表
+Mock.mock(RegExp('^/sys/role/list(\\?.*)?$'), 'get', (req) => {
   const response = createResponse()
+  // 简化：忽略查询参数，直接返回全部，附带分页元数据
   response.data = {
-    records: [
-      {
-        id: 3,
-        created: '2021-01-04T10:09:14',
-        updated: '2021-01-30T08:19:52',
-        statu: 1,
-        name: '普通用户',
-        code: 'normal',
-        remark: '只有基本查看功能',
-        menuIds: [],
-      },
-      {
-        id: 6,
-        created: '2021-01-16T13:29:03',
-        updated: '2021-01-17T15:50:45',
-        statu: 1,
-        name: '超级管理员',
-        code: 'admin',
-        remark: '系统默认最高权限，不可以编辑和任意修改',
-        menuIds: [],
-      },
-    ],
-    total: 2,
+    records: rolesData,
+    total: rolesData.length,
     size: 10,
     current: 1,
     orders: [],
@@ -345,28 +352,74 @@ Mock.mock(RegExp('/sys/role/list*'), 'get', () => {
     searchCount: true,
     pages: 1,
   }
-
   return response
 })
 
-Mock.mock(RegExp('/sys/role/info/*'), 'get', () => {
+// 详情
+Mock.mock(RegExp('^/sys/role/info/\\d+$'), 'get', (req) => {
   const response = createResponse()
-  response.data = {
-    id: 6,
-    created: '2021-01-16T13:29:03',
-    updated: '2021-01-17T15:50:45',
-    statu: 1,
-    name: '超级管理员',
-    code: 'admin',
-    remark: '系统默认最高权限，不可以编辑和任意修改',
-    menuIds: [3],
+  const idStr = req.url.split('/').pop()
+  const id = Number(idStr)
+  const found = rolesData.find((r) => r.id === id)
+  response.data = found || null
+  return response
+})
+
+// 保存
+Mock.mock('/sys/role/save', 'post', (req) => {
+  const response = createResponse()
+  const body = JSON.parse(req.body || '{}')
+  const now = new Date().toISOString()
+  const newRole = {
+    id: nextRoleId++,
+    created: now,
+    updated: now,
+    statu: body.statu ?? 1,
+    name: body.name || '',
+    code: body.code || '',
+    remark: body.remark || '',
+    menuIds: body.menuIds || [],
   }
-
+  rolesData.push(newRole)
+  response.data = newRole
   return response
 })
 
-Mock.mock(RegExp('/sys/role/*'), 'post', () => {
+// 更新
+Mock.mock('/sys/role/update', 'post', (req) => {
   const response = createResponse()
+  const body = JSON.parse(req.body || '{}')
+  const idx = rolesData.findIndex((r) => r.id === body.id)
+  if (idx !== -1) {
+    rolesData[idx] = {
+      ...rolesData[idx],
+      ...body,
+      updated: new Date().toISOString(),
+    }
+    response.data = rolesData[idx]
+  } else {
+    response.code = 400
+    response.msg = '角色不存在'
+  }
+  return response
+})
+
+// 批量删除
+Mock.mock('/sys/role/delete', 'post', (req) => {
+  const response = createResponse()
+  const ids = JSON.parse(req.body || '[]')
+  rolesData = rolesData.filter((r) => !ids.includes(r.id))
+  response.data = true
+  return response
+})
+
+// 单个删除
+Mock.mock(RegExp('^/sys/role/delete/\\d+$'), 'post', (req) => {
+  const response = createResponse()
+  const idStr = req.url.split('/').pop()
+  const id = Number(idStr)
+  rolesData = rolesData.filter((r) => r.id !== id)
+  response.data = true
   return response
 })
 
